@@ -1,0 +1,57 @@
+= cubrid-ruby
+
+== Description
+
+This is a Ruby Driver and ActiveRecord Adapter for CUBRID Database.
+
+== Installation
+
+ 1. cd ext/
+ 2. ruby extconf.rb
+ 3. make install				# make sure Ruby Development Kit (http://rubyinstaller.org) is installed.
+ 
+=== Gem Installation
+
+ Windows:
+ - gem install cubrid
+ 
+ Linux:
+ - sudo -E gem install cubrid
+
+== Features/Problems
+
+* Cross-platform.
+
+* Compatible with CUBRID 2.2 x86.
+
+* Compatible with Ruby 1.8.7.
+
+* Ruby 1.9.1 is not supported yet.
+
+== Synopsis
+
+Use Case:
+
+ #1: @con = Cubrid.connect('dbname')
+ #2: @con = Cubrid.connect('dbname', 'host', 'port', 'username', 'password')
+ con = Cubrid.connect('demodb', 'localhost', '30000', 'public', '')
+ 
+ puts con.server_version
+ 
+ if @con
+  sql = "SELECT * FROM event"
+  stmt = @con.prepare(sql)
+  stmt.execute
+  
+  while row = stmt.fetch
+	puts "Record #{row[0]}: #{row[1]}"
+  end
+ else
+  puts "Connection could not be established"
+ end
+
+== Copyright
+
+Author    :: NHN Corp. <cubrid_ruby@nhncorp.com>
+Copyright :: Copyright (c) 2010 Search Solution Corporation
+License   :: Ruby's
