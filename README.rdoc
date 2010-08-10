@@ -32,11 +32,13 @@ This is a Ruby Driver and ActiveRecord Adapter for CUBRID Database.
 
 Use Case:
 
+ require 'cubrid'
+
  #1: @con = Cubrid.connect('dbname')
  #2: @con = Cubrid.connect('dbname', 'host', 'port', 'username', 'password')
- con = Cubrid.connect('demodb', 'localhost', '30000', 'public', '')
+ @con = Cubrid.connect('demodb', 'localhost', '30000', 'public', '')
  
- puts con.server_version
+ puts @con.server_version
  
  if @con
   sql = "SELECT * FROM event"
