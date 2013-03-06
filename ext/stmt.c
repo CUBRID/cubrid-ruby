@@ -49,7 +49,7 @@ cubrid_stmt_new(Connection *con, char *sql, int option)
   int handle, param_cnt; 
   T_CCI_ERROR error;
 
-  printf("%s\n", sql);
+  /* printf("%s\n", sql); */
 
   handle = cci_prepare(con->handle, sql, option, &error);
   if (handle < 0) {
@@ -947,9 +947,9 @@ cubrid_stmt_each(VALUE self)
 
   while(1) {
     row = cubrid_stmt_fetch(self);
-	if (NIL_P(row)) {
+    if (NIL_P(row)) {
       break;
-	}
+    }
     rb_yield(row);
   }
   
@@ -978,9 +978,9 @@ cubrid_stmt_each_hash(VALUE self)
 
   while(1) {
     row = cubrid_stmt_fetch_hash(self);
-	if (NIL_P(row)) {
+    if (NIL_P(row)) {
       break;
-	}
+    }
     rb_yield(row);
   }
   
@@ -1010,7 +1010,7 @@ cubrid_stmt_each_hash(VALUE self)
 VALUE
 cubrid_stmt_column_info(VALUE self)
 {
-  VALUE	desc;
+  VALUE    desc;
   int i;
   char col_name[MAX_STR_LEN];
   int datatype, precision, scale, nullable;
