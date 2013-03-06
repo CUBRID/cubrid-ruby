@@ -32,12 +32,7 @@ require 'mkmf'
 require 'rbconfig'
 
 if ENV["CUBRID"]
-	if Config::CONFIG["arch"] =~ /64/
-		cci_lib_path = ENV["CUBRID"] + "/lib64"
-	else
-		cci_lib_path = ENV["CUBRID"] + "/lib"
-	end
-
+	cci_lib_path = ENV["CUBRID"] + "/lib"
 	cci_inc_path = ENV["CUBRID"] + "/include"
 	
 	$INCFLAGS = ($INCFLAGS ? $INCFLAGS : "") + " -I" +  cci_inc_path
