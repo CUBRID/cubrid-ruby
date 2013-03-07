@@ -14,8 +14,6 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_query
-        @con = Cubrid.connect('demodb')
-
         @con.query('drop table if exists test_cubrid')
         @con.query('create table test_cubrid (a int, b double, c string, d date)')
  
@@ -66,6 +64,21 @@ class CUBRID_Test < Test::Unit::TestCase
              puts
            }
         }
+    end
+
+    def test_affected_rows
+        @con.query('drop table if exists test_cubrid2')
+        @con.query('create table test_cubrid2 (a int)')
+ 
+        stmt = @con.prepare('insert into test_cubrid2 values (?)')
+        stmt.execute(100)
+        stmt.execute(101)
+
+        stmt = @con.query('SELECT * FROM test_cubrid2') 
+        num = stmt.affected_rows
+        assert_equal(2, num)
+
+        @con.query('drop table if exists test_cubrid2')
     end
 
     def teardown
