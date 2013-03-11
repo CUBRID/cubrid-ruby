@@ -84,7 +84,6 @@ extern VALUE cubrid_conn_rollback(VALUE self);
 extern VALUE cubrid_conn_get_auto_commit(VALUE self);
 extern VALUE cubrid_conn_set_auto_commit(VALUE self, VALUE auto_commit);
 extern VALUE cubrid_conn_to_s(VALUE self);
-extern VALUE cubrid_conn_glo_new(VALUE self, VALUE table, VALUE file);
 extern VALUE cubrid_conn_server_version(VALUE self);
 
 /* from stmt.c */
@@ -97,24 +96,7 @@ extern VALUE cubrid_stmt_fetch_hash(VALUE self);
 extern VALUE cubrid_stmt_each(VALUE self);
 extern VALUE cubrid_stmt_each_hash(VALUE self);
 extern VALUE cubrid_stmt_column_info(VALUE self);
-extern VALUE cubrid_stmt_get_oid(VALUE self);
 
-/* from oid.c */
-extern VALUE cubrid_oid_to_s(VALUE self);
-extern VALUE cubrid_oid_table(VALUE self);
-extern VALUE cubrid_oid_refresh(VALUE self);
-extern VALUE cubrid_oid_get_value(VALUE self, VALUE attr_name);
-extern VALUE cubrid_oid_set_value(VALUE self, VALUE attr_name, VALUE val);
-extern VALUE cubrid_oid_save(VALUE self);
-extern VALUE cubrid_oid_drop(VALUE self);
-extern VALUE cubrid_oid_lock(VALUE self);
-extern VALUE cubrid_oid_glo_load(VALUE self, VALUE file_name);
-extern VALUE cubrid_oid_glo_save(VALUE self, VALUE file_name);
-extern VALUE cubrid_oid_glo_drop(VALUE self);
-extern VALUE cubrid_oid_glo_size(VALUE self);
-extern VALUE cubrid_oid_each(VALUE self);
-extern VALUE cubrid_oid_method_missing(int argc, VALUE* argv, VALUE self);
-extern VALUE cubrid_oid_to_hash(VALUE self);
 
 /* CUBRID[http://www.cubrid.com] ruby driver
  * 
@@ -174,7 +156,6 @@ void Init_cubrid()
   rb_define_method(cConnection, "auto_commit?", cubrid_conn_get_auto_commit, 0); /* in conn.c */
   rb_define_method(cConnection, "auto_commit=", cubrid_conn_set_auto_commit, 1); /* in conn.c */
   rb_define_method(cConnection, "to_s", cubrid_conn_to_s, 0); /* in conn.c */
-  rb_define_method(cConnection, "glo_new", cubrid_conn_glo_new, 2); /* in conn.c */
   rb_define_method(cConnection, "server_version", cubrid_conn_server_version, 0); /* in conn.c */
 
   /* statement */
@@ -188,26 +169,7 @@ void Init_cubrid()
   rb_define_method(cStatement, "each", cubrid_stmt_each, 0); /* in stmt.c */
   rb_define_method(cStatement, "each_hash", cubrid_stmt_each_hash, 0); /* in stmt.c */
   rb_define_method(cStatement, "close", cubrid_stmt_close, 0); /* in stmt.c */
-  rb_define_method(cStatement, "get_oid", cubrid_stmt_get_oid, 0); /* in stmt.c */
-  /* stmt.to_s */
 
-  /* oid */
-  cOid = rb_define_class_under(cCubrid, "Oid", rb_cObject);
-  rb_define_method(cOid, "to_s", cubrid_oid_to_s, 0); /* in oid.c */
-  rb_define_method(cOid, "table", cubrid_oid_table, 0); /* in oid.c */
-  rb_define_method(cOid, "[]", cubrid_oid_get_value, 1); /* in oid.c */
-  rb_define_method(cOid, "[]=", cubrid_oid_set_value, 2); /* in oid.c */
-  rb_define_method(cOid, "each", cubrid_oid_each, 0); /* in oid.c */
-  rb_define_method(cOid, "refresh", cubrid_oid_refresh, 0); /* in oid.c */
-  rb_define_method(cOid, "save", cubrid_oid_save, 0); /* in oid.c */
-  rb_define_method(cOid, "drop", cubrid_oid_drop, 0); /* in oid.c */
-  rb_define_method(cOid, "lock", cubrid_oid_lock, 1); /* in oid.c */
-  rb_define_method(cOid, "to_hash", cubrid_oid_to_hash, 0); /* in oid.c */
-  rb_define_method(cOid, "glo_load", cubrid_oid_glo_load, 1); /* in oid.c */
-  rb_define_method(cOid, "glo_save", cubrid_oid_glo_save, 1); /* in oid.c */
-  rb_define_method(cOid, "glo_drop", cubrid_oid_glo_drop, 0); /* in oid.c */
-  rb_define_method(cOid, "glo_size", cubrid_oid_glo_size, 0); /* in oid.c */
-  rb_define_method(cOid, "method_missing", cubrid_oid_method_missing, -1); /* in oid.c */
 }
 
 /* Document-class: Cubrid::Connection

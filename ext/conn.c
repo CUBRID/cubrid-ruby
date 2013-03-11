@@ -36,7 +36,6 @@ extern VALUE cubrid_stmt_new(Connection *con, char *stmt, int option);
 extern VALUE cubrid_stmt_execute(int argc, VALUE* argv, VALUE self);
 extern VALUE cubrid_stmt_fetch(VALUE self);
 extern VALUE cubrid_stmt_close(VALUE self);
-extern VALUE cubrid_oid_new(Connection *con, char *oid_str);
 
 static void
 cubrid_conn_free(void *p) 
@@ -325,58 +324,6 @@ cubrid_conn_to_s(VALUE self)
   sprintf(buf, "host: %s, port: %d, db: %s, user: %s", con->host, con->port, con->db, con->user);
 
   return rb_str_new2(buf);
-}
-
-/* call-seq:
- *   glo_new(classname <, filename>) -> Oid
- *
- * 새로운 GLO 객체를 생성하고 Oid로 반환합니다.
- * CUBRID는 바이너리 데이터를 저장할 수 있도록 GLO를 제공합니다. GLO 객체는 OID로 직접 접근할 수 있습니다.
- *
- * filename이 주어지면 해당 파일의 데이터를 데이터베이스에 저장합니다. 주어지지 않으면 빈 GLO 객체를 생성합니다.
- * 
- *  con = Cubrid.connect('subway')
- *  con.query('create table attachfile under glo (name string)')
- *  con.commit
- *
- *  glo = con.glo_new('attachfile', 'pic.jpg')
- *  glo.glo_size  #=> 1234
- *
- *  glo = con.glo_new('attachfile')
- *  glo.glo_size  #=> 0
- *  glo.glo_save('pic.jpg')
- *  glo.glo_size  #=> 1234
- */
-VALUE
-cubrid_conn_glo_new(VALUE self, VALUE table, VALUE file)
-{
-  char oid_str[MAX_STR_LEN], *table_name, *file_name;
-  int res;
-  T_CCI_ERROR error;
-  Connection *con;
-
-  GET_CONN_STRUCT(self, con);
-  CHECK_CONNECTION(con, Qnil);
-
-  if (NIL_P(table)) {
-    rb_raise(rb_eArgError, "class name is required.");
-    return Qnil;
-  }
-  table_name = StringValueCStr(table);
-  
-  if (NIL_P(file)) {
-    file_name = NULL;
-  } else {
-    file_name = StringValueCStr(file);
-  }
-   
-  res = cci_glo_new(con->handle, table_name, file_name, oid_str, &error);
-  if (res < 0) {
-    cubrid_handle_error(res, &error);
-    return Qnil;
-  }
-
-  return cubrid_oid_new(con, oid_str);
 }
 
 /* call-seq:
