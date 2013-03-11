@@ -31,7 +31,6 @@
 #include "cubrid.h"
 
 extern VALUE cubrid_conn_end_tran(Connection *con, int type);
-extern VALUE cubrid_oid_new(Connection *con, char *oid_str);
 
 extern VALUE cStatement, cOid;
 
@@ -594,19 +593,6 @@ cubrid_stmt_dbval_to_ruby_value(int req_handle, int type, int index, Connection 
       }
       break;
 
-    case CCI_U_TYPE_OBJECT:
-      res = cci_get_data(req_handle, index, CCI_A_TYPE_STR, &res_buf, &ind);
-      if (res < 0) {
-        cubrid_handle_error(res, NULL);
-        return Qnil;
-      }
-      if (ind < 0) {
-        val = Qnil;
-      } else {
-        val = cubrid_oid_new(con, res_buf);
-      }
-      break;
-
     case CCI_U_TYPE_DATE:
     case CCI_U_TYPE_TIME:
     case CCI_U_TYPE_TIMESTAMP:
@@ -704,19 +690,6 @@ cubrid_stmt_dbval_to_ruby_value_from_set(T_CCI_SET set, int type, int index, Con
       } else {
         double_val = atof(res_buf);
         val = rb_float_new(double_val);
-      }
-      break;
-
-    case CCI_U_TYPE_OBJECT:
-      res = cci_set_get(set, index, CCI_A_TYPE_STR, &res_buf, &ind);
-      if (res < 0) {
-        cubrid_handle_error(res, NULL);
-        return Qnil;
-      }
-      if (ind < 0) {
-        val = Qnil;
-      } else {
-        val = cubrid_oid_new(con, res_buf);
       }
       break;
 
@@ -1042,33 +1015,5 @@ cubrid_stmt_column_info(VALUE self)
   }
 
   return desc;
-}
-
-/* call-seq:
- *   get_oid() -> Oid
- *
- * Cubrid::INCLUDE_OID 옵션으로 prepare된 Statement인 경우 실행 결과에 OID가 포함되어 있습니다.
- * get_oid()는 이 OID를 다룰 수 있도록 Oid 객체를 생성하여 반환합니다.
- *
- *  con = Cubrid.connect('demodb')
- *  con.prepare('SELECT * FROM db_user', CUBRID::INCLUDE_OID) { |stmt|
- *    stmt.execute
- *    stmt.fetch
- *    oid = stmt.get_oid
- *    print oid.table
- *  }
- *  con.close
- */
-VALUE 
-cubrid_stmt_get_oid(VALUE self)
-{
-  Statement *stmt;
-  char oid_str[MAX_STR_LEN];
- 
-  GET_STMT_STRUCT(self, stmt);
-  CHECK_HANDLE(stmt, self);
-
-  cci_get_cur_oid(stmt->handle, oid_str);
-  return cubrid_oid_new(stmt->con, oid_str);
 }
 
