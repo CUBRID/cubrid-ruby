@@ -1,0 +1,141 @@
+**********************************
+******Ruby Driver Unit Test*******
+**********************************
+
+
+********1. Test for connection.rb ********
+Run options: 
+
+# Running tests:
+
+test_autocommit:
+.test_close:
+.test_commit:
+.test_connect:
+.test_prepare:
+.test_query:
+.test_rollback:
+.test_server_version:
+.test_set:
+1
+2
+3
+.test_to_s:
+.
+
+Finished tests in 0.743581s, 13.4484 tests/s, 28.2417 assertions/s.
+
+10 tests, 21 assertions, 0 failures, 0 errors, 0 skips
+
+
+********2. Test for exceptions.rb ********
+Run options: 
+
+# Running tests:
+
+test_bind_invalid_datatype:
+Ftest_connection_close:
+.test_connection_exception:
+Ftest_execute_invalid_argument:
+.test_execute_invalid_argument:
+.test_invalid_prepare:
+Ftest_invalid_prepare_semantic:
+.test_invalid_query:
+.
+
+Finished tests in 20.319051s, 0.3937 tests/s, 1.9686 assertions/s.
+
+  1) Failure:
+test_bind_invalid_datatype(CUBRID_Test_Exception) [exceptions.rb:96]:
+Cubrid::Error expected but nothing was raised.
+
+  2) Failure:
+test_connection_exception(CUBRID_Test_Exception) [exceptions.rb:29]:
+Expected /ERROR:\ CAS,\ \-16,\ Connection\ error/ to match "ERROR: CCI, 0, Cannot connect to CUBRID CAS".
+
+  3) Failure:
+test_invalid_prepare(CUBRID_Test_Exception) [exceptions.rb:61]:
+[Cubrid::Error] exception expected, not
+Class: <ArgumentError>
+Message: <"wrong number of arguments (0 for 1..2)">
+---Backtrace---
+exceptions.rb:61:in `prepare'
+exceptions.rb:61:in `block in test_invalid_prepare'
+---------------
+
+8 tests, 40 assertions, 3 failures, 0 errors, 0 skips
+
+
+********3. Test for statement.rb ********
+Run options: 
+
+# Running tests:
+
+test_affected_rows:
+.test_bind:
+.test_close:
+.test_column_info:
+.test_each:
+.test_each_hash:
+.test_execute:
+.test_execute_bind:
+.test_execute_invalid_type:
+.test_fetch:
+.test_fetch_hash:
+.test_last_insert_id
+connect
+
+.
+
+Finished tests in 0.392654s, 30.5613 tests/s, 91.6838 assertions/s.
+
+12 tests, 36 assertions, 0 failures, 0 errors, 0 skips
+
+
+********4. Test for test_cubrid.rb ********
+Run options: 
+
+# Running tests:
+
+test_affected_rows:
+.test_column_info:
+name STRING 1073741823 0 0
+id INT 0 0 0
+password OBJECT 0 0 0
+direct_groups set(OBJECT) 0 0 0
+groups set(OBJECT) 0 0 0
+authorization OBJECT 0 0 0
+triggers sequence(OBJECT) 0 0 0
+.test_connect:
+host: test-db-server, port: 33000, db: demodb, user: dba
+.test_each:
+DBA
+PUBLIC
+.test_each_hash:
+DBA
+PUBLIC
+.test_query:
+10 3.141592 hello 2007-12-25 00:00:00 -0800
+.
+
+Finished tests in 0.203253s, 29.5199 tests/s, 9.8400 assertions/s.
+
+6 tests, 2 assertions, 0 failures, 0 errors, 0 skips
+
+
+********5. Test for transaction.rb ********
+Run options: 
+
+# Running tests:
+
+test_transaction_basic:
+.test_transaction_multiple_process:
+.test_transaction_rollback:
+.test_transaction_rollback_multiple:
+.
+
+Finished tests in 0.194078s, 20.6103 tests/s, 46.3731 assertions/s.
+
+4 tests, 9 assertions, 0 failures, 0 errors, 0 skips
+
+

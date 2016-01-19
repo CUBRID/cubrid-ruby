@@ -1,0 +1,38 @@
+CUBRID Ruby Interface Unit Test
+=====================================
+
+1. Overview
+
+This folder contains unit test cases for CUBRID Ruby interface 8.4.4
+You could run the codes to test the basic functions introduced on http://ruby-doc.org/gems/docs/c/cubrid-0.65/   
+
+
+2. Requirements
+
+2.1 Environment Setup
+1) Install Ruby 1.8.7 or above
+2) Download CUBRID Ruby driver 8.4.4 and install it by using command 'gem install cubrid-8.4.4.gem'
+3) Install CUBRID 8.4.4 on either local machine or a remote server  
+4) Start CUBRID service and 'demodb' database (demodb is installed by default)
+
+2.2 Testing Tools
+1) Ruby Test:Unit Module
+2) Shell - used to run all the cases automatically, you could install shell on Linux, or install Linux-like environment (e.g Cywin) if using Windows OS  
+
+
+3. Run Unit Tests & Read the Test Results
+
+3.1 Run all the tests 
+1) You could use shell to test all the cases once, simply type "sh run_test.sh"
+2) The test.result file would be then generated which contains all the test results
+   you can find the number of tests, assertions, failures and errors for each test class
+
+3.2 Run the single test
+1) You could use ruby command to run a single test individually, such as 'ruby -rubygems connection.rb'
+2) The test result would be displayed on screen directly, such as: 
+   " 
+   [ruby@NC-PL-QA-012 unittest]$ ruby -rubygems statement.rb 
+   Finished in 0.319454 seconds.
+   11 tests, 34 assertions, 0 failures, 0 errors
+   "
+ 

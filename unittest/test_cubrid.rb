@@ -7,6 +7,7 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_connect
+        puts "test_connect:"
         @con.auto_commit = true
         connection_info = @con.to_s
         puts connection_info
@@ -14,6 +15,7 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_query
+        puts "test_query:"
         @con.query('drop table if exists test_cubrid')
         @con.query('create table test_cubrid (a int, b double, c string, d date)')
  
@@ -33,6 +35,7 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_column_info
+        puts "test_column_info:"
         @con.prepare('SELECT * FROM db_user') { |stmt|
            stmt.execute
            stmt.column_info.each { |col|
@@ -47,6 +50,7 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_each
+        puts "test_each:"
         @con.prepare('SELECT * FROM db_user') { |stmt|
            stmt.execute
            stmt.each { |r|
@@ -57,6 +61,7 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_each_hash
+        puts "test_each_hash:"
         @con.prepare('SELECT * FROM db_user') { |stmt|
            stmt.execute
            stmt.each_hash { |r|
@@ -67,6 +72,7 @@ class CUBRID_Test < Test::Unit::TestCase
     end
 
     def test_affected_rows
+        puts "test_affected_rows:"
         @con.query('drop table if exists test_cubrid2')
         @con.query('create table test_cubrid2 (a int)')
  
