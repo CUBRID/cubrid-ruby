@@ -31,15 +31,17 @@
 #include "cubrid.h"
 
 char *cci_client_name = "CCI"; /* for lower than 7.0 */
-VALUE cCubrid, cConnection, cStatement, cOid;
+VALUE cCubrid, cConnection, cStatement, cOid,eCubrid,cCubrid;
 extern VALUE cubrid_conn_new(char *host, int port, char *db, char *user, char *passwd);
+
+VALUE GeteCubrid()
+{
+    return eCubrid;
+}
 
 /* call-seq:
  *   connect(db, host, port, user, password) -> Connection
  *
- * 데이터베이스 서버에 연결하고 Connection 객체를 반환합니다.
- * db는 반드시 주어져야 하고, host, port, user, password는 옵션입니다. 
- * 이들의 디폴트 값은 각각 'localhost', 30000, 'PUBLIC', '' 입니다.
  *
  *  con = Cubrid.connect('demodb', '192.168.1.1', '33000', 'foo','bar')
  *  con.to_s  #=>  host: 192.168.1.1, port: 33000, db: demodb, user: foo
@@ -79,9 +81,11 @@ VALUE cubrid_connect(int argc, VALUE* argv, VALUE self)
 extern VALUE cubrid_conn_close(VALUE self);
 extern VALUE cubrid_conn_prepare(int argc, VALUE* argv, VALUE self);
 extern VALUE cubrid_conn_query(int argc, VALUE* argv, VALUE self);
+extern VALUE cubrid_conn_batch_execute(int argc, VALUE* argv, VALUE self);
 extern VALUE cubrid_conn_commit(VALUE self);
 extern VALUE cubrid_conn_rollback(VALUE self);
 extern VALUE cubrid_conn_get_auto_commit(VALUE self);
+extern VALUE cubrid_conn_get_last_insert_id(VALUE self);
 extern VALUE cubrid_conn_set_auto_commit(VALUE self, VALUE auto_commit);
 extern VALUE cubrid_conn_to_s(VALUE self);
 extern VALUE cubrid_conn_server_version(VALUE self);
@@ -100,7 +104,6 @@ extern VALUE cubrid_stmt_column_info(VALUE self);
 
 /* CUBRID[http://www.cubrid.com] ruby driver
  * 
- * CUBRID ruby driver는 ruby에서 CUBRID 데이터베이스 서버에 접속하여 질의를 할 수 있도록 해주는 모듈입니다.
  *
  * * Connection
  * * Statement
@@ -127,9 +130,12 @@ void Init_cubrid()
   rb_define_const(cCubrid, "NCHAR",     INT2NUM(CCI_U_TYPE_NCHAR));
   rb_define_const(cCubrid, "VARNCHAR",  INT2NUM(CCI_U_TYPE_VARNCHAR));
   rb_define_const(cCubrid, "BIT",       INT2NUM(CCI_U_TYPE_BIT));
+  rb_define_const(cCubrid, "BLOB",       INT2NUM(CCI_U_TYPE_BLOB));
+  rb_define_const(cCubrid, "CLOB",       INT2NUM(CCI_U_TYPE_CLOB));
   rb_define_const(cCubrid, "VARBIT",    INT2NUM(CCI_U_TYPE_VARBIT));
   rb_define_const(cCubrid, "NUMERIC",   INT2NUM(CCI_U_TYPE_NUMERIC));
   rb_define_const(cCubrid, "INT",       INT2NUM(CCI_U_TYPE_INT));
+  rb_define_const(cCubrid, "BIGINT",    INT2NUM(CCI_U_TYPE_BIGINT));
   rb_define_const(cCubrid, "SHORT",     INT2NUM(CCI_U_TYPE_SHORT));
   rb_define_const(cCubrid, "MONETARY",  INT2NUM(CCI_U_TYPE_MONETARY));
   rb_define_const(cCubrid, "FLOAT",     INT2NUM(CCI_U_TYPE_FLOAT));
@@ -153,7 +159,9 @@ void Init_cubrid()
   rb_define_method(cConnection, "rollback", cubrid_conn_rollback, 0); /* in conn.c */
   rb_define_method(cConnection, "prepare", cubrid_conn_prepare, -1); /* in conn.c */
   rb_define_method(cConnection, "query", cubrid_conn_query, -1); /* in conn.c */
+  rb_define_method(cConnection, "batch_execute", cubrid_conn_batch_execute, -1); /* in conn.c */
   rb_define_method(cConnection, "auto_commit?", cubrid_conn_get_auto_commit, 0); /* in conn.c */
+  rb_define_method(cConnection, "last_insert_id", cubrid_conn_get_last_insert_id, 0); /* in conn.c */
   rb_define_method(cConnection, "auto_commit=", cubrid_conn_set_auto_commit, 1); /* in conn.c */
   rb_define_method(cConnection, "to_s", cubrid_conn_to_s, 0); /* in conn.c */
   rb_define_method(cConnection, "server_version", cubrid_conn_server_version, 0); /* in conn.c */
@@ -170,20 +178,13 @@ void Init_cubrid()
   rb_define_method(cStatement, "each_hash", cubrid_stmt_each_hash, 0); /* in stmt.c */
   rb_define_method(cStatement, "close", cubrid_stmt_close, 0); /* in stmt.c */
 
+  //error
+  //cCubrid = rb_define_class("CUBRID", rb_cObject);
+  eCubrid = rb_define_class_under(cCubrid, "Error", rb_eStandardError);
+
 }
 
-/* Document-class: Cubrid::Connection
- * Connection 클래스는 데이터베이스 서버에 대한 연결을 유지하고 트랜잭션을 연산을 수행합니다.
- */
-
-/* Document-class: Cubrid::Statement
- * Statement 클래스는 질의문을 수행하고 그 결과를 반환합니다.
- */
-
 /* Document-class: Cubrid::Oid
- * Oid 클래스는 CUBRID instance에 대하여 직접 연산을 수행할 수 있도록 합니다.
- * CUBRID는 저장되어 있는 instance들의 고유한 식별자를 OID라는 이름으로 제공합니다. 
- * OID를 통해서 직접 해당하는 instance에 접근하여 read/write/update/delete 연산을 할 수 있습니다.
  * 
  */
 

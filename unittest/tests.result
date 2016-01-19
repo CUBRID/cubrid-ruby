@@ -1,0 +1,299 @@
+**********************************
+******Ruby Driver Unit Test*******
+**********************************
+
+
+********1. Test for bug_apis_291.rb ********
+Run options: 
+
+# Running tests:
+
+.
+
+Finished tests in 0.698742s, 1.4311 tests/s, 1.4311 assertions/s.
+
+1 tests, 1 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********2. Test for bug_apis_676.rb ********
+Run options: 
+
+# Running tests:
+
+.
+
+Finished tests in 0.353006s, 2.8328 tests/s, 8.4984 assertions/s.
+
+1 tests, 3 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********3. Test for bug_apis_678.rb ********
+Run options: 
+
+# Running tests:
+
+.
+
+Finished tests in 0.713964s, 1.4006 tests/s, 1.4006 assertions/s.
+
+1 tests, 1 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********4. Test for bug_apis_680.rb ********
+Run options: 
+
+# Running tests:
+
+E
+
+Finished tests in 0.551787s, 1.8123 tests/s, 0.0000 assertions/s.
+
+  1) Error:
+CUBRID_APIS_680#test_prepare_string:
+ArgumentError: assertion message must be String or Proc, but Array was given.
+    bug_apis_680.rb:32:in `test_prepare_string'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:1265:in `run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit/testcase.rb:17:in `run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:940:in `block in _run_suite'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:933:in `map'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:933:in `_run_suite'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:663:in `block in _run_suites'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:661:in `each'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:661:in `_run_suites'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:884:in `_run_anything'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:1092:in `run_tests'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:1079:in `block in _run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:1078:in `each'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:1078:in `_run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/minitest/unit.rb:1066:in `run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:27:in `run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:780:in `run'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:372:in `block (2 levels) in autorun'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:33:in `run_once'
+    /usr/local/rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/test/unit.rb:371:in `block in autorun'
+
+1 tests, 0 assertions, 0 failures, 1 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********5. Test for bug_apis_683.rb ********
+Run options: 
+
+# Running tests:
+
+.
+
+Finished tests in 0.665022s, 1.5037 tests/s, 4.5111 assertions/s.
+
+1 tests, 3 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********6. Test for bug_apis_684.rb ********
+Run options: 
+
+# Running tests:
+
+.
+
+Finished tests in 0.676411s, 1.4784 tests/s, 1.4784 assertions/s.
+
+1 tests, 1 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********7. Test for bug_apis_708.rb ********
+Run options: 
+
+# Running tests:
+
+Fixnum
+Fixnum
+.Fixnum
+Fixnum
+Fixnum
+.Fixnum
+Fixnum
+.Fixnum
+Fixnum
+.
+
+Finished tests in 3.054776s, 1.3094 tests/s, 2.9462 assertions/s.
+
+4 tests, 9 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********8. Test for connection.rb ********
+Run options: 
+
+# Running tests:
+
+test_autocommit:
+.test_close:
+.test_commit:
+.test_connect:
+.test_prepare:
+.test_query:
+.test_rollback:
+.test_server_version:
+Ftest_set:
+1
+2
+3
+.test_to_s:
+.
+
+Finished tests in 6.283189s, 1.5915 tests/s, 3.3423 assertions/s.
+
+  1) Failure:
+CUBRID_Test_Connection#test_server_version [connection.rb:45]:
+Expected /9\.3\.0/ to match "10.0.0.1285".
+
+10 tests, 21 assertions, 1 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********9. Test for exceptions.rb ********
+Run options: 
+
+# Running tests:
+
+test_bind_invalid_datatype:
+Ftest_connection_close:
+.test_connection_exception:
+Ftest_execute_invalid_argument:
+.test_execute_invalid_argument:
+.test_invalid_prepare:
+Ftest_invalid_prepare_semantic:
+Ftest_invalid_query:
+F
+
+Finished tests in 4.392888s, 1.8211 tests/s, 8.8780 assertions/s.
+
+  1) Failure:
+CUBRID_Test_Exception#test_bind_invalid_datatype [exceptions.rb:96]:
+Cubrid::Error expected but nothing was raised.
+
+  2) Failure:
+CUBRID_Test_Exception#test_connection_exception [exceptions.rb:29]:
+Expected /ERROR:\ CAS,\ \-16,\ Connection\ error/ to match "ERROR: CCI, 0, Cannot connect to CUBRID CAS".
+
+  3) Failure:
+CUBRID_Test_Exception#test_invalid_prepare [exceptions.rb:60]:
+Expected /ERROR:\ DBMS,\ \-493,\ Syntax:\ syntax\ error,\ unexpected\ IdName/ to match "ERROR: DBMS, -493, Syntax: In line 1, column 1 before ' sql prepare statament'\nSyntax error: unexpected 'invalid', expecting SELECT or VALUE or VALUES or '(' [CAS INFO-10.34.64.105:33000,1,4904].".
+
+  4) Failure:
+CUBRID_Test_Exception#test_invalid_prepare_semantic [exceptions.rb:72]:
+Expected /ERROR:\ DBMS,\ \-494,\ Semantic:\ The\ number\ of\ attributes\(3\)\ and\ values\(2\)\ are\ not\ equal\./ to match "ERROR: DBMS, -494, Semantic: before '  VALUES (?,?)'\nThe number of attributes(3) and values(2) are not equal. insert into test_cubrid test_cubrid (test_cubrid.a, test_cub...[CAS INFO-10.34.64.105:33000,1,4904].".
+
+  5) Failure:
+CUBRID_Test_Exception#test_invalid_query [exceptions.rb:54]:
+Expected /ERROR:\ DBMS,\ \-493,\ Syntax:\ syntax\ error,\ unexpected\ IdName/ to match "ERROR: DBMS, -493, Syntax: In line 1, column 1 before ' sql query statament'\nSyntax error: unexpected 'invalid', expecting SELECT or VALUE or VALUES or '(' [CAS INFO-10.34.64.105:33000,1,4904].".
+
+8 tests, 39 assertions, 5 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********10. Test for statement.rb ********
+Run options: 
+
+# Running tests:
+
+test_affected_rows:
+.test_bind:
+.test_close:
+.test_column_info:
+Ftest_each:
+.test_each_hash:
+.test_execute:
+.test_execute_bind:
+.test_execute_invalid_type:
+.test_fetch:
+.test_fetch_hash:
+.test_last_insert_id
+connect
+
+.
+
+Finished tests in 7.351863s, 1.6322 tests/s, 4.7607 assertions/s.
+
+  1) Failure:
+CUBRID_Test_Statement#test_column_info [statement.rb:112]:
+<[0, 256, 0, 0]> expected but was
+<[10, 256, 10, 0]>.
+
+12 tests, 35 assertions, 1 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********11. Test for test_cubrid.rb ********
+Run options: 
+
+# Running tests:
+
+test_affected_rows:
+.test_column_info:
+name STRING 1073741823 0 0
+id INT 10 0 0
+password OBJECT 0 0 0
+direct_groups set(OBJECT) 0 0 0
+groups set(OBJECT) 0 0 0
+authorization OBJECTJECT) 0 0 0
+triggers sequence(OBJECT) 0 0 0
+comment STRINGce(OBJECT) 1024 0 0
+.test_connect:
+host: test-db-server, port: 33000, db: demodb, user: dba
+.test_each:
+DBA
+PUBLIC
+.test_each_hash:
+DBA
+PUBLIC
+.test_query:
+10 3.141592 hello 2007-12-25 00:00:00 +0800
+.
+
+Finished tests in 2.675736s, 2.2424 tests/s, 0.7475 assertions/s.
+
+6 tests, 2 assertions, 0 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+
+********12. Test for transaction.rb ********
+Run options: 
+
+# Running tests:
+
+test_transaction_basic:
+.test_transaction_multiple_process:
+.test_transaction_rollback:
+.test_transaction_rollback_multiple:
+F
+
+Finished tests in 3.821655s, 1.0467 tests/s, 2.0933 assertions/s.
+
+  1) Failure:
+CUBRID_Test_Transaction#test_transaction_rollback_multiple [transaction.rb:95]:
+<2> expected but was
+<0>.
+
+4 tests, 8 assertions, 1 failures, 0 errors, 0 skips
+
+ruby -v: ruby 2.1.0p0 (2013-12-25 revision 44422) [x86_64-linux]
+
+

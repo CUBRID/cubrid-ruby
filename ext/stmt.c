@@ -34,6 +34,33 @@ extern VALUE cubrid_conn_end_tran(Connection *con, int type);
 
 extern VALUE cStatement, cOid;
 
+char* 
+get_type_name_by_u_type(T_CCI_COL_INFO * column_info)
+{
+	int i,u_type;
+  int size = sizeof(db_type_info) / sizeof(db_type_info[0]);
+	char buf[64] = {'\0'};
+	int type_buf_len=63;
+	
+	u_type = CCI_GET_COLLECTION_DOMAIN(column_info->ext_type);
+	for (i = 0; i < size; i++) {
+		if (db_type_info[i].cubrid_u_type== u_type) {
+			break;
+		}
+	}
+	
+	if (CCI_IS_SET_TYPE(column_info->ext_type)) {
+	    snprintf(buf, type_buf_len, "set(%s)", db_type_info[i].type_name);
+	} else if (CCI_IS_MULTISET_TYPE(column_info->ext_type)) {
+	    snprintf(buf, type_buf_len, "multiset(%s)", db_type_info[i].type_name);
+	} else if (CCI_IS_SEQUENCE_TYPE(column_info->ext_type)) {
+	    snprintf(buf, type_buf_len, "sequence(%s)", db_type_info[i].type_name);
+	} else {
+	    return db_type_info[i].type_name;
+	}
+	return buf;
+}
+
 void
 cubrid_stmt_free(void *p)
 {
@@ -67,14 +94,14 @@ cubrid_stmt_new(Connection *con, char *sql, int option)
   stmt->handle = handle;
   stmt->param_cnt = param_cnt;
   stmt->bound = 0;
+  stmt->blob = NULL;
+  stmt->clob = NULL;
   
   return cursor;
 }
 
 /* call-seq:
  *   close() -> nil
- *
- * Statement를 종료합니다.
  */
 VALUE
 cubrid_stmt_close(VALUE self)
@@ -99,7 +126,7 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
   void *val = NULL;
   int *ind;
 
-  arr_size = RARRAY(data)->len;
+  arr_size = RARRAY_LEN(data);//RARRAY(data)->len;
   ind = ALLOCA_N(int, arr_size);
   if (ind == NULL) {
     rb_raise(rb_eNoMemError, "Not enough memory");
@@ -174,8 +201,8 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
               ind[i] = 1;
             }
             else {
-              bit_ary[i].size = RSTRING(rb_ary_entry(data, i))->len;
-              bit_ary[i].buf = RSTRING(rb_ary_entry(data, i))->ptr;
+              bit_ary[i].size =RSTRING_LEN(rb_ary_entry(data, i));//RSTRING(rb_ary_entry(data, i))->len;
+              bit_ary[i].buf =RSTRING_PTR(rb_ary_entry(data, i)); //RSTRING(rb_ary_entry(data, i))->ptr;
               ind[i] = 0;
             }
           }
@@ -195,7 +222,7 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
               ind[i] = 1;
             }
             else {
-              str_ary[i] = RSTRING(rb_ary_entry(data, i))->ptr;
+              str_ary[i] =RSTRING_PTR(rb_ary_entry(data, i));// RSTRING(rb_ary_entry(data, i))->ptr;
               ind[i] = 0;
             }
           }
@@ -224,12 +251,12 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
           }
           else {
             a = rb_funcall(rb_ary_entry(data, i), rb_intern("to_a"), 0);
-            date_ary[i].ss = FIX2INT(RARRAY(a)->ptr[0]);
-            date_ary[i].mm = FIX2INT(RARRAY(a)->ptr[1]);
-            date_ary[i].hh = FIX2INT(RARRAY(a)->ptr[2]);
-            date_ary[i].day = FIX2INT(RARRAY(a)->ptr[3]);
-            date_ary[i].mon = FIX2INT(RARRAY(a)->ptr[4]);
-            date_ary[i].yr = FIX2INT(RARRAY(a)->ptr[5]);
+            date_ary[i].ss = FIX2INT(RARRAY_PTR(a)[0]);
+            date_ary[i].mm = FIX2INT(RARRAY_PTR(a)[1]);
+            date_ary[i].hh = FIX2INT(RARRAY_PTR(a)[2]);
+            date_ary[i].day = FIX2INT(RARRAY_PTR(a)[3]);
+            date_ary[i].mon = FIX2INT(RARRAY_PTR(a)[4]);
+            date_ary[i].yr = FIX2INT(RARRAY_PTR(a)[5]);
             
             ind[i] = 0;
           }
@@ -281,7 +308,57 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
 }
 
 static void
-cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, int set_type)
+cubrid_stmt_bind_lob(Statement *stmt, int index, VALUE data, int u_type, int set_type, int lob_length)
+{
+  T_CCI_BLOB blob = NULL;
+  T_CCI_BLOB clob = NULL;
+  T_CCI_ERROR error;
+  int res;
+
+  if(u_type == CCI_U_TYPE_BLOB) {
+    res = cci_blob_new (stmt->con->handle, &blob, &error);  
+    if (res < 0) {
+      cubrid_handle_error(res, &error);
+      return;
+    }
+
+    res = cci_blob_write (stmt->con->handle, blob, 0, lob_length, StringValuePtr(data), &error);
+    if (res < 0) {
+      cubrid_handle_error(res, &error);
+      return;
+    }
+
+    res = cci_bind_param (stmt->handle, index, CCI_A_TYPE_BLOB, (void *)blob, CCI_U_TYPE_BLOB, CCI_BIND_PTR);
+    if (res < 0) {
+      cubrid_handle_error(res, NULL);
+      return;
+    }
+
+    stmt->blob = blob;
+  } else {
+    res = cci_clob_new (stmt->con->handle, &clob, &error);  
+    if (res < 0) {
+      cubrid_handle_error(res, &error);
+      return;
+    }
+
+    res = cci_clob_write (stmt->con->handle, clob, 0, lob_length, StringValuePtr(data), &error);
+    if (res < 0) {
+      cubrid_handle_error(res, &error);
+      return;
+    }
+
+    res = cci_bind_param (stmt->handle, index, CCI_A_TYPE_CLOB, (void *)clob, CCI_U_TYPE_CLOB, CCI_BIND_PTR);
+    if (res < 0) {
+      cubrid_handle_error(res, NULL);
+      return;
+    }
+    stmt->clob = clob;    
+  }
+}
+
+static void
+cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, int set_type, int lob_length)
 {
   int res, int_val, a_type = CCI_A_TYPE_STR;
   char *str_val;
@@ -290,6 +367,11 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
   T_CCI_SET set = NULL;
   T_CCI_DATE date;
   T_CCI_BIT bit;
+
+  if (u_type == CCI_U_TYPE_BLOB ||
+       u_type == CCI_U_TYPE_CLOB){
+      return cubrid_stmt_bind_lob(stmt, index, data, u_type, set_type, lob_length);
+  }
 
   switch (TYPE(data)) {
     case T_NIL:
@@ -318,13 +400,13 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
       break;
 
     case T_STRING:
-      str_val = RSTRING(data)->ptr;
+      str_val = StringValueCStr(data);
       a_type = CCI_A_TYPE_STR;
       val = str_val;
       if (u_type == CCI_U_TYPE_UNKNOWN) {
         u_type = CCI_U_TYPE_STRING;
       } else if (u_type == CCI_U_TYPE_BIT || u_type == CCI_U_TYPE_VARBIT) {
-        bit.size = RSTRING(data)->len;
+        bit.size = RARRAY_LEN(data);
         bit.buf = str_val;
         a_type = CCI_A_TYPE_BIT;
         val = &bit;
@@ -336,12 +418,12 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
         VALUE a;
 
         a = rb_funcall(data, rb_intern("to_a"), 0);
-        date.ss = FIX2INT(RARRAY(a)->ptr[0]);
-        date.mm = FIX2INT(RARRAY(a)->ptr[1]);
-        date.hh = FIX2INT(RARRAY(a)->ptr[2]);
-        date.day = FIX2INT(RARRAY(a)->ptr[3]);
-        date.mon = FIX2INT(RARRAY(a)->ptr[4]);
-        date.yr = FIX2INT(RARRAY(a)->ptr[5]);
+        date.ss = FIX2INT(RARRAY_PTR(a)[0]);
+        date.mm = FIX2INT(RARRAY_PTR(a)[1]);
+        date.hh = FIX2INT(RARRAY_PTR(a)[2]);
+        date.day = FIX2INT(RARRAY_PTR(a)[3]);
+        date.mon = FIX2INT(RARRAY_PTR(a)[4]);
+        date.yr = FIX2INT(RARRAY_PTR(a)[5]);
 
         a_type = CCI_A_TYPE_DATE;
         val = &date;
@@ -391,10 +473,6 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
 /* call-seq:
  *   bind(index, data <, db_type, set_type>) -> nil
  *
- * prepare된 Statement의 호스트변수에 데이터를 바인딩합니다.
- * db_type은 ruby의 데이터가 바인딩될 때 적용될 데이터베이스의 타입을 지정합니다.
- * db_type이 주어지지 않으면 아래와 같이 기본 타입으로 적용됩니다.
- *
  *  *fixnum, bignum -> integer
  *  *float          -> double
  *  *string         -> string(varchar)
@@ -402,9 +480,6 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
  *  *Oid            -> object
  *  *array          -> collection
  *
- * set_type은 data가 배열인 경우 배열의 원소에 적용될 데이터베이스 타입을 지정합니다.
- * 배열의 모든 원소들은 동일한 타입이어야 합니다.
- * set_type이 주어지지 않으면 배열의 원소들은 기본 타입으로 바인딩됩니다. 
  *   
  *  con = Cubrid.connect('demodb')
  *  con.auto_commit = true
@@ -422,12 +497,12 @@ VALUE
 cubrid_stmt_bind(int argc, VALUE* argv, VALUE self)
 {
   Statement *stmt;
-  VALUE index, u_type, data, set_type;
+  VALUE index, u_type, data, set_type, lob_length;
 
   GET_STMT_STRUCT(self, stmt);
   CHECK_HANDLE(stmt, self);
   
-  rb_scan_args(argc, argv, "22", &index, &data, &u_type, &set_type);
+  rb_scan_args(argc, argv, "23", &index, &data, &u_type, &set_type, &lob_length);
   
   if (NIL_P(u_type)) {
     u_type = INT2NUM(CCI_U_TYPE_UNKNOWN);
@@ -437,7 +512,10 @@ cubrid_stmt_bind(int argc, VALUE* argv, VALUE self)
     set_type = INT2NUM(CCI_U_TYPE_UNKNOWN);
   }
 
-  cubrid_stmt_bind_internal(stmt, NUM2INT(index), data, NUM2INT(u_type), NUM2INT(set_type));
+  if (NIL_P(lob_length)) {
+    lob_length = INT2NUM(0);
+  }
+  cubrid_stmt_bind_internal(stmt, NUM2INT(index), data, NUM2INT(u_type), NUM2INT(set_type), NUM2INT(lob_length));
   stmt->bound = 1;
 
   return Qnil;
@@ -460,22 +538,14 @@ cubrid_stmt_is_auto_commitable(T_CCI_SQLX_CMD cmd)
     case SQLX_CMD_GET_LDB:
     case SQLX_CMD_GET_STATS:
       return 0;
+    default:
+      return 1;
   }
-
-  return 1;
 }
 
 /* call-seq:
  *   execute()     -> int
  *   execute(...)  -> int
- *
- * prepare된 Statement를 실행하고 검색되거나 영향을 받은 row의 개수를 반환합니다. 
- *
- * 인수가 주어지면 prepare된 Statement의 호스트 변수에 데이터를 바인딩합니다.
- * 인수는 순서대로 호스트 변수에 바인딩 되기 때문에 인수의 개수와 호스트 변수의 개수가 일치해야 합니다.
- * 인수는 묵시적으로 기본 타입으로 바인딩 됩니다. 
- *
- * connection의 auto commit 모드가 true이면 commit이 곧바로 수행됩니다.
  *
  *  con = Cubrid.connect('demodb')
  *  con.prepare('insert into a values (?, ?, ?, ?)') { |stmt|
@@ -504,7 +574,7 @@ cubrid_stmt_execute(int argc, VALUE* argv, VALUE self)
   if (argc > 0) {
     int i;
     for (i = 0; i < argc; i++) {
-      cubrid_stmt_bind_internal(stmt, i + 1, argv[i], CCI_U_TYPE_UNKNOWN, CCI_U_TYPE_UNKNOWN);
+      cubrid_stmt_bind_internal(stmt, i + 1, argv[i], CCI_U_TYPE_UNKNOWN, CCI_U_TYPE_UNKNOWN, 0);
     }
   }
 
@@ -514,6 +584,16 @@ cubrid_stmt_execute(int argc, VALUE* argv, VALUE self)
     return INT2NUM(0);
   }
 
+  if(stmt->blob != NULL) {
+    cci_blob_free(stmt->blob);
+    stmt->blob = NULL;
+  }
+  
+  if(stmt->clob != NULL) {
+    cci_clob_free(stmt->clob);
+    stmt->clob = NULL;
+  }  
+  
   res_col_info = cci_get_result_info(stmt->handle, &res_sql_type, &res_col_count);
   if (res_sql_type == SQLX_CMD_SELECT && !res_col_info) {
     cubrid_handle_error(CUBRID_ER_CANNOT_GET_COLUMN_INFO, &error);
@@ -526,7 +606,6 @@ cubrid_stmt_execute(int argc, VALUE* argv, VALUE self)
   stmt->affected_rows = row_count;
 
   if(stmt->con->auto_commit == Qtrue && cubrid_stmt_is_auto_commitable(stmt->sql_type)) {
-    cubrid_stmt_close(self);
     cubrid_conn_end_tran(stmt->con, CCI_TRAN_COMMIT);
   }
 
@@ -536,8 +615,6 @@ cubrid_stmt_execute(int argc, VALUE* argv, VALUE self)
 
 /* call-seq:
  *   affected_rows() -> int
- *
- * 수행된 SQL로 영향을 받았거나 검색된 row의 개수를 반환합니다.
  */
 VALUE 
 cubrid_stmt_affected_rows(VALUE self)
@@ -546,41 +623,78 @@ cubrid_stmt_affected_rows(VALUE self)
 
   GET_STMT_STRUCT(self, stmt);
   CHECK_HANDLE(stmt, self);
-
+  
   return INT2NUM(stmt->affected_rows);
 }
 
+static int ut_str_to_bigint (char *str, CUBRID_LONG_LONG * value)
+{  char *end_p;  
+   CUBRID_LONG_LONG bi_val;  
+   bi_val = strtoll (str, &end_p, 10);  
+   if (*end_p == 0 || *end_p == '.' || isspace ((int) *end_p))    
+   	{      
+   	  *value = bi_val;      
+	  return 0;    
+	}  
+
+   return (-1);
+
+}
+
+
 static VALUE
-cubrid_stmt_dbval_to_ruby_value(int req_handle, int type, int index, Connection *con)
+cubrid_stmt_dbval_to_ruby_value(Statement* stmt, int type, int index)
 {
-  int res, ind;
+  int res, ind, size;
   VALUE val;
-  char *res_buf;
+  char *res_buf, *lob_buffer;
   int int_val;
   double double_val;
   T_CCI_DATE date;
   T_CCI_BIT bit;
+  T_CCI_BLOB blob;
+  T_CCI_BLOB clob;
+  T_CCI_ERROR error;
+  CUBRID_LONG_LONG l_val;
 
   switch (type) {
     case CCI_U_TYPE_INT:
     case CCI_U_TYPE_SHORT:
-      res = cci_get_data(req_handle, index, CCI_A_TYPE_INT, &int_val, &ind);
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_INT, &int_val, &ind);
       if (res < 0) {
         cubrid_handle_error(res, NULL);
         return Qnil;
       }
+      
       if (ind < 0) {
         val = Qnil;
       } else {
         val = INT2NUM(int_val);
       }
       break;
-
+    case CCI_U_TYPE_BIGINT:
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_STR, &res_buf, &ind);
+      if (res < 0) {
+        cubrid_handle_error(res, NULL);
+        return Qnil;
+      }
+       
+      res = ut_str_to_bigint(res_buf,&l_val);
+      if(res < 0){
+        cubrid_handle_error(res, NULL);
+        return Qnil;       
+      } 
+      if (ind < 0) {
+        val = Qnil;
+      } else {
+        val = LL2NUM(l_val);
+      } 
+      break;        
     case CCI_U_TYPE_FLOAT:
     case CCI_U_TYPE_DOUBLE:
-    case CCI_U_TYPE_NUMERIC:
+    //case CCI_U_TYPE_NUMERIC:
     case CCI_U_TYPE_MONETARY:
-      res = cci_get_data(req_handle, index, CCI_A_TYPE_STR, &res_buf, &ind);
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_STR, &res_buf, &ind);
       if (res < 0) {
         cubrid_handle_error(res, NULL);
         return Qnil;
@@ -592,11 +706,10 @@ cubrid_stmt_dbval_to_ruby_value(int req_handle, int type, int index, Connection 
         val = rb_float_new(double_val);
       }
       break;
-
     case CCI_U_TYPE_DATE:
     case CCI_U_TYPE_TIME:
     case CCI_U_TYPE_TIMESTAMP:
-      res = cci_get_data(req_handle, index, CCI_A_TYPE_DATE, &date, &ind);
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_DATE, &date, &ind);
       if (res < 0) {
         cubrid_handle_error(res, NULL);
         return Qnil;
@@ -621,7 +734,7 @@ cubrid_stmt_dbval_to_ruby_value(int req_handle, int type, int index, Connection 
 
     case CCI_U_TYPE_BIT:
     case CCI_U_TYPE_VARBIT:
-      res = cci_get_data(req_handle, index, CCI_A_TYPE_BIT, &bit, &ind);
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_BIT, &bit, &ind);
       if (res < 0) {
         cubrid_handle_error(res, NULL);
         return Qnil;
@@ -633,8 +746,55 @@ cubrid_stmt_dbval_to_ruby_value(int req_handle, int type, int index, Connection 
       }
       break;
 
+    case CCI_U_TYPE_BLOB:
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_BLOB, &blob, &ind);
+      if (res < 0) {
+        cubrid_handle_error(res, NULL);
+        return Qnil;
+      }
+
+      size = cci_blob_size(blob);
+      if(size > 0 && ind >= 0) {
+        lob_buffer = (void*)malloc(size);
+        if(lob_buffer == NULL){
+          cubrid_handle_error(CUBRID_ER_ALLOC_FAILED, NULL);
+          return Qnil;           
+        }
+        res = cci_blob_read (stmt->con->handle, blob, 0, size, lob_buffer, &error);
+        if (res < 0) {
+          cubrid_handle_error(res, &error);
+          return Qnil;
+        }        
+        val = rb_tainted_str_new(lob_buffer, size);
+        free(lob_buffer);
+      } else {
+        val = Qnil;
+      }
+      break;
+
+    case CCI_U_TYPE_CLOB:
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_CLOB, &clob, &ind);
+      if (res < 0) {
+        cubrid_handle_error(res, NULL);
+        return Qnil;
+      }
+
+      size = cci_clob_size(clob);
+      if(size > 0 && ind >= 0) {
+        lob_buffer = (void*)malloc(size);
+        res = cci_clob_read (stmt->con->handle, clob, 0, size, lob_buffer, &error);
+        if (res < 0) {
+          cubrid_handle_error(res, &error);
+          return Qnil;
+        }        
+        val = rb_tainted_str_new(lob_buffer, size);
+      } else {
+        val = Qnil;
+      }
+      break;
+ 
     default:
-      res = cci_get_data(req_handle, index, CCI_A_TYPE_STR, &res_buf, &ind);
+      res = cci_get_data(stmt->handle, index, CCI_A_TYPE_STR, &res_buf, &ind);
       if (res < 0) {
         cubrid_handle_error(res, NULL);
         return Qnil;
@@ -782,20 +942,20 @@ cubrid_stmt_dbset_to_ruby_value(int req_handle, int index, Connection *con)
 }
 
 VALUE
-cubrid_stmt_fetch_one_row(int req_handle, int col_count, T_CCI_COL_INFO *col_info, Connection *con)
+cubrid_stmt_fetch_one_row(Statement *stmt)
 {
   int i, type;
   VALUE row, val;
 
   row = rb_ary_new();
 
-  for (i = 0; i < col_count; i++) {
-    type = CCI_GET_RESULT_INFO_TYPE(col_info, i + 1);
+  for (i = 0; i < stmt->col_count; i++) {
+    type = CCI_GET_RESULT_INFO_TYPE(stmt->col_info, i + 1);
 
     if (CCI_IS_COLLECTION_TYPE(type)) {
-      val = cubrid_stmt_dbset_to_ruby_value(req_handle, i + 1, con);
+      val = cubrid_stmt_dbset_to_ruby_value(stmt->handle, i + 1, stmt->con);
     } else {
-      val = cubrid_stmt_dbval_to_ruby_value(req_handle, type, i + 1, con);
+      val = cubrid_stmt_dbval_to_ruby_value(stmt, type, i + 1);
     }
 
     rb_ary_push(row, val);
@@ -807,10 +967,6 @@ cubrid_stmt_fetch_one_row(int req_handle, int col_count, T_CCI_COL_INFO *col_inf
 /* call-seq:
  *   fetch() -> array or nil
  *
- * 검색된 결과에서 현재 커서가 위치한 row를 반환하고 커서의 위치를 다음으로 옮깁니다.
- * row의 column들은 배열에 저장되어 반환됩니다.
- * 더 이상 fetch할 row가 없으면 nil을 반환합니다.
- *
  *  con = Cubrid.connect('demodb')
  *  con.prepare('SELECT * FROM db_user') { |stmt|
  *    stmt.execute
@@ -818,8 +974,6 @@ cubrid_stmt_fetch_one_row(int req_handle, int col_count, T_CCI_COL_INFO *col_inf
  *    print r[0]
  *  }
  *  con.close
- *
- * 데이터베이스의 타입은 아래와 같이 루비의 타입으로 대응됩니다.
  *
  *  *int, short                             -> fixnum, bignum
  *  *float, double, numeric, monetary       -> float
@@ -854,17 +1008,12 @@ cubrid_stmt_fetch(VALUE self)
     return Qnil;
   }
 
-  return cubrid_stmt_fetch_one_row(stmt->handle, stmt->col_count, stmt->col_info, stmt->con);
+  return cubrid_stmt_fetch_one_row(stmt);
 }
 
 /* call-seq:
  *   fetch_hash() -> hash or nil
- *
- * 검색된 결과에서 현재 커서가 위치한 row를 반환하고 커서의 위치를 다음으로 옮깁니다.
- * row의 column들은 hash에 저장되어 반환됩니다.
- * hash의 key는 column 이름이거나 SELECT 문에 주어진 alias 입니다.
- * 더 이상 fetch할 row가 없으면 nil을 반환합니다.
- * 
+
  *  con = Cubrid.connect('demodb')
  *  con.prepare('SELECT * FROM db_user') { |stmt|
  *    stmt.execute
@@ -890,7 +1039,7 @@ cubrid_stmt_fetch_hash(VALUE self)
 
   hash = rb_hash_new();
   for(i = 0; i < stmt->col_count; i++) {
-    col = RARRAY(row)->ptr[i];
+    col = RARRAY_PTR(row)[i];
     strcpy(colName, CCI_GET_RESULT_INFO_NAME(stmt->col_info, i+1));
     rb_hash_aset(hash, rb_str_new2(colName), col);
   }
@@ -901,8 +1050,6 @@ cubrid_stmt_fetch_hash(VALUE self)
 /* call-seq:
  *   each() { |row| block } -> nil
  *
- * row를 fetch하여 주어진 block에 전달하여 수행시킵니다. 전달되는 row는 array입니다.
- * block은 row가 fetch될 때마다 수행됩니다. 
  *
  *  con = Cubrid.connect('demodb')
  *  con.prepare('SELECT * FROM db_user') { |stmt|
@@ -932,9 +1079,6 @@ cubrid_stmt_each(VALUE self)
 /* call-seq:
  *   each_hash() { |hash| block } -> nil
  *
- * row를 fetch하여 주어진 block에 전달하여 수행시킵니다. 전달되는 row는 hash입니다.
- * block은 row가 fetch될 때마다 수행됩니다. 
- *
  *  con = Cubrid.connect('demodb')
  *  con.prepare('SELECT * FROM db_user') { |stmt|
  *    stmt.execute
@@ -963,11 +1107,6 @@ cubrid_stmt_each_hash(VALUE self)
 /* call-seq:
  *   column_info() -> array
  *
- * fetch 될 row의 column 정보를 반환합니다. 
- * 한 컬럼의 정보가 hash로 구성되기 때문에, 결국 전체 컬럼 정보는 hash를 저장하고 있는 array로 반환됩니다. 
- * hash의 key는 name, type_name, precision, scale, nullable 이며, 
- * 각각 컬럼 이름, 컬럼의 데이터 타입, 정밀도, 스케일, 널가능 여부를 의미합니다.
- *
  *  con = Cubrid.connect('demodb')
  *  con.prepare('SELECT * FROM db_user') { |stmt|
  *    stmt.column_info.each { |col|
@@ -988,7 +1127,7 @@ cubrid_stmt_column_info(VALUE self)
   char col_name[MAX_STR_LEN];
   int datatype, precision, scale, nullable;
   Statement *stmt;
-
+  char type_name[MAX_STR_LEN]={0};
   GET_STMT_STRUCT(self, stmt);
   CHECK_HANDLE(stmt, self);
 
@@ -996,6 +1135,7 @@ cubrid_stmt_column_info(VALUE self)
 
   for (i = 0; i < stmt->col_count; i++) {
     VALUE item;
+    char* temp;
 
     item = rb_hash_new();
 
@@ -1006,7 +1146,12 @@ cubrid_stmt_column_info(VALUE self)
     datatype  = CCI_GET_RESULT_INFO_TYPE(stmt->col_info, i+1);
 
     rb_hash_aset(item, rb_str_new2("name"), rb_str_new2(col_name));
-    rb_hash_aset(item, rb_str_new2("type_name"), INT2NUM(datatype));
+
+    temp = get_type_name_by_u_type(&stmt->col_info[i]);
+    memcpy(type_name,temp,strlen(temp));
+    rb_hash_aset(item, rb_str_new2("type_name"), rb_str_new2(type_name));
+    memset(type_name,0,strlen(temp));
+	
     rb_hash_aset(item, rb_str_new2("precision"), INT2NUM(precision));
     rb_hash_aset(item, rb_str_new2("scale"), INT2NUM(scale));
     rb_hash_aset(item, rb_str_new2("nullable"), INT2NUM(nullable));

@@ -31,23 +31,62 @@
 require 'mkmf'
 require 'rbconfig'
 
-if ENV["CUBRID"]
-	cci_lib_path = ENV["CUBRID"] + "/lib"
-	cci_inc_path = ENV["CUBRID"] + "/include"
-	
-	$INCFLAGS = ($INCFLAGS ? $INCFLAGS : "") + " -I" +  cci_inc_path
-	
-	if !$LIBPATH
-		$LIBPATH = []
-	end
-	
-	$LIBPATH.push(cci_lib_path)
-	
-	if have_library("cascci", "cci_init")
-	  create_makefile("cubrid")
-	else
-	  puts "cascci could not be found. Possibly you have not installed CUBRID Database yet."
-	end
-else
-  puts "$CUBRID_BROKER is not defined. Possibly you have not installed CUBRID Database yet."
+
+if RUBY_PLATFORM.include?"linux"
+  
+  if RUBY_PLATFORM.include?"64"
+    $os_type="x64"
+  else
+    $os_type="x86"
+  end 
+  
+  system("chmod +x build_cci.sh")
+  system("./build_cci.sh",$os_type)
+
+  cci_lib_path = "cci-src/cci/.libs/libcascci.a"
+  cci_base_inc_path = "./cci-src/src/base"
+  cci_cci_inc_path = "./cci-src/src/cci"
+  cci_broker_inc_path = "./cci-src/src/broker"
+    
+  $INCFLAGS = ($INCFLAGS ? $INCFLAGS : "") + " -I" +  cci_base_inc_path \
+               +" -I" +  cci_cci_inc_path +" -I" +  cci_broker_inc_path
+         
+  if(ARGV[0] == "daily")   
+    print "daily test"          
+    $CPPFLAGS =($CPPFLAGS ? $CPPFLAGS : "") + " -fprofile-arcs -ftest-coverage"
+    $LDFLAGS =($LDFLAGS ? $LDFLAGS : "") + " -lgcov"  
+  end
+    
+  if !$LIBPATH
+    $LIBPATH = []
+  end
+    
+  $LIBPATH.push(cci_lib_path)
+  
+  if have_library("supc++") and have_library("stdc++")    
+    create_makefile("cubrid") 
+  else
+    puts "your system can not support supc++ or stdc++,install failed."
+  end
+  
+else 
+  if ENV["CUBRID"]
+  	cci_lib_path = ENV["CUBRID"] + "\\lib"
+  	cci_inc_path = ENV["CUBRID"] + "\\include"
+  	
+  	$INCFLAGS = ($INCFLAGS ? $INCFLAGS : "") + " -I" +  cci_inc_path
+  	
+  	if !$LIBPATH
+  		$LIBPATH = []
+  	end
+  	
+  	$LIBPATH.push(cci_lib_path)
+  	if have_library("cascci", "cci_init")
+  	  create_makefile("cubrid")
+  	else
+  	  puts "cascci could not be found.\nPlease check if CUBRID database is installed and if the $CUBRID environment variable is correctly set to the location where cubrid is installed."
+  	end
+  else
+    puts "$CUBRID environment variable is not defined.\nPlease check that you have installed CUBRID database and if the $CUBRID environment variable is correctly set to the location where cubrid is installed."
+  end
 end

@@ -56,12 +56,12 @@ cubrid_conn_new(char *host, int port, char *db, char *user, char *passwd)
 {
   VALUE conn;
   Connection *c;
-  int handle;
+  int handle,res;
+  T_CCI_ERROR error;
 
-  handle = cci_connect(host, port, db, user, passwd);
+  handle = cci_connect_ex(host, port, db, user, passwd,&error);
   if (handle < 0) {
-    cubrid_handle_error(handle, NULL);
-    return Qnil;
+    cubrid_handle_error(handle, &error);
   }
 
   conn = Data_Make_Struct(cConnection, Connection, 0, cubrid_conn_free, c);
@@ -71,7 +71,13 @@ cubrid_conn_new(char *host, int port, char *db, char *user, char *passwd)
   c->port = port;
   strcpy(c->db, db);
   strcpy(c->user, user);
-  c->auto_commit = Qfalse;
+  c->auto_commit = Qtrue;
+  
+  res = cci_set_autocommit(handle,CCI_AUTOCOMMIT_TRUE);
+  if (res < 0)
+  {
+    cubrid_handle_error (res, NULL);
+  }
 
   return conn;
 }
@@ -79,7 +85,6 @@ cubrid_conn_new(char *host, int port, char *db, char *user, char *passwd)
 /* call-seq:
  *   close() -> nil
  *
- * 데이터베이스와의 연결을 헤제합니다. 이 연결로부터 생성된 Statement도 모두 close됩니다.
  */
 VALUE 
 cubrid_conn_close(VALUE self)
@@ -123,15 +128,6 @@ cubrid_conn_prepare_internal(int argc, VALUE* argv, VALUE self)
  *   prepare(sql <, option>) -> Statement
  *   prepare(sql <, option>) { |stmt| block } -> nil
  *
- * 주어진 SQL을 실행할 준비를 하고 Statement 객체를 반환합니다. 
- * SQL은 데이터베이스 서버로 보내져 파싱되어 실행할 수 있도록 준비됩니다.
- *
- * option으로 Cubrid::INCLUDE_OID를 줄 수 있는데, 이것은 SQL 실행 결과에 OID를 포함하도록 합니다.
- * 실행 결과에 포함된 OID는 Statement.get_oid 메쏘드로 얻을 수 있습니다.
- *
- * block 주어지면 생성된 Statement 객체를 인수로 전달하여 block을 실행시킵니다. 
- * block의 수행이 끝나면 Statement 객체는 더이상 유효하지 않습니다.
- *
  *  con = Cubrid.connect('demodb')
  *  stmt = con.prepare('SELECT * FROM db_user')
  *  stmt.execute
@@ -168,15 +164,6 @@ cubrid_conn_prepare(int argc, VALUE* argv, VALUE self)
 /* call-seq:
  *   query(sql <, option>) -> Statement
  *   query(sql <, option>) { |row| block } -> nil
- *
- * 주어진 SQL을 실행할 준비를 하고 실행까지 시킨 후 Statement 객체를 반환합니다. 
- * 따라서 Statement.execute를 수행할 필요없이 바로 결과를 받아올 수 있습니다.
- * 
- * option으로 Cubrid::INCLUDE_OID를 줄 수 있는데, 이것은 prepare 메쏘드의 그것과 동일합니다.
- *
- * block 주어지면 Statement.fetch를 호출하여 얻어온 결과를 인수로 전달하여 block을 실행시킵니다. 
- * block은 SQL 실행 결과로 넘어온 모든 row 대해서 한번씩 호출됩니다.
- * block이 끝나면 Statement 객체는 더 이상 유효하지 않습니다.
  *
  *  con = Cubrid.connect('demodb')
  *  stmt = con.query('SELECT * FROM db_user')
@@ -220,6 +207,72 @@ cubrid_conn_query(int argc, VALUE* argv, VALUE self)
   return stmt;
 }
 
+/* call-seq:
+ *
+ *  con = Cubrid.connect('demodb')
+ *  sqls = [
+ *        "insert into friends values('fred','fox','home-1','20')",
+ *       "insert into friends values('blue','cat','home-2','21')",
+ *        "insert into friends values('blue','cat','home-2','21')1"
+ *   ] 
+ *  puts con.batch_execute(sqls)
+ *  con.close
+ *
+ */
+VALUE
+cubrid_conn_batch_execute(int argc, VALUE* argv, VALUE self)
+{
+  Connection *con;
+  char** sql = NULL;
+  T_CCI_ERROR error;
+  T_CCI_QUERY_RESULT *query_result;
+  VALUE sqls, result;
+  int count = 0, i, n_executed, err_code;
+
+  GET_CONN_STRUCT(self, con);
+  CHECK_CONNECTION(con, Qnil);
+    
+  rb_scan_args(argc, argv, "10", &sqls);
+  if (T_ARRAY != TYPE(sqls)){
+    cubrid_handle_error(-2006, NULL);
+  }
+  count = RARRAY_LEN(sqls);
+  sql = malloc(count * sizeof(void*));
+  if (NULL == sql){
+    cubrid_handle_error(-3, NULL);
+  }
+  
+  for(i = 0; i < count; i++){
+    sql[i] = RSTRING_PTR(rb_ary_entry(sqls, i));
+  }
+
+  n_executed = cci_execute_batch (con->handle, count, sql, &query_result, &error);
+  if (n_executed < 0){
+    free(sql);
+    cubrid_handle_error(n_executed, &error);
+    return Qnil;
+  }
+  free(sql);
+
+  result = rb_ary_new2(n_executed);
+  for (i = 0; i < n_executed; i++) {
+    VALUE item = rb_hash_new();
+    char* err_msg;
+    rb_hash_aset(item, rb_str_new2("err_no"), INT2NUM(query_result[i].err_no));
+    err_msg = query_result[i].err_msg == NULL ? "" : query_result[i].err_msg;
+    rb_hash_aset(item, rb_str_new2("err_msg"), rb_str_new2(err_msg));
+    rb_ary_push(result, item);
+  }
+  
+  err_code = cci_query_result_free (query_result, n_executed);    
+  if (err_code < 0)    
+  {     
+    cubrid_handle_error(err_code, NULL);
+    return Qnil;
+  }   
+  return result;
+}
+
 VALUE
 cubrid_conn_end_tran(Connection *con, int type)
 {
@@ -238,10 +291,6 @@ cubrid_conn_end_tran(Connection *con, int type)
 
 /* call-seq:
  *   commit() -> nil
- * 
- * 트랜잭션을 commit으로 종료합니다. 
- * 트랜잭션이 종료되면 이 연결로 부터 생성된 모든 Statement 객체도 모두 close 됩니다.
- *
  */
 VALUE
 cubrid_conn_commit(VALUE self)
@@ -256,9 +305,6 @@ cubrid_conn_commit(VALUE self)
 
 /* call-seq:
  *   rollback() -> nil
- * 
- * 트랜잭션을 rollback으로 종료합니다. 
- * 트랜잭션이 종료되면 이 연결로 부터 생성된 모든 Statement 객체도 모두 close 됩니다.
  *
  */
 VALUE
@@ -271,13 +317,47 @@ cubrid_conn_rollback(VALUE self)
   
   return Qnil;
 }
+/* call-seq:
+ *   last_insert_id? -> last_insert_id
+ *
+ */
+
+VALUE
+cubrid_conn_get_last_insert_id(VALUE self)
+{
+  Connection *con;
+  char *name = NULL;
+  char ret[1024] = { '\0' };
+  int res;
+  T_CCI_ERROR error;
+
+  GET_CONN_STRUCT(self, con);
+  CHECK_CONNECTION(con, Qnil);
+
+  /* cci_last_id set last_id as allocated string */
+  res = cci_get_last_insert_id (con->handle, &name, &error);
+
+  if (res < 0)
+    {
+       cubrid_handle_error (res, &error);
+       return Qnil;
+    }
+
+  if (!name)
+    {
+      return Qnil;
+    }
+  else
+    {
+      strncpy (ret, name, sizeof (ret) - 1);
+    }
+    
+  return rb_cstr2inum(ret, 10);
+}
+
 
 /* call-seq:
  *   auto_commit? -> true or false
- *
- * Connection이 auto commit 모드인지 아닌지를 반환합니다. 
- * Connection은 기본적으로 auto commit 모드가 아니며, auto_commit= 메쏘드로 auto commit 여부를 설정할 수 있습니다.
- *
  */
 VALUE
 cubrid_conn_get_auto_commit(VALUE self)
@@ -292,19 +372,30 @@ cubrid_conn_get_auto_commit(VALUE self)
 
 /* call-seq:
  *   auto_commit= true or false -> nil
- *
- * Connection의 auto commit 모드를 설정합니다.
- * auto commit이 true로 설정되면 Statement.execute의 실행이 끝난 후 바로 commit이 실행됩니다. 
- *
  */
 VALUE
 cubrid_conn_set_auto_commit(VALUE self, VALUE auto_commit)
 {
   Connection *con;
+  int res=0;
 
   GET_CONN_STRUCT(self, con);
   CHECK_CONNECTION(con, self);
 
+  if(auto_commit == Qtrue)
+  {
+      res = cci_set_autocommit(con->handle,CCI_AUTOCOMMIT_TRUE);
+  }
+  else
+  {
+      res = cci_set_autocommit(con->handle,CCI_AUTOCOMMIT_FALSE);
+  }
+
+  if (res < 0)
+  {
+    cubrid_handle_error (res, NULL);
+    return Qnil;
+  }
   con->auto_commit = auto_commit;
   return Qnil;
 }
@@ -312,7 +403,6 @@ cubrid_conn_set_auto_commit(VALUE self, VALUE auto_commit)
 /* call-seq:
  *   to_s() -> string
  *
- * Connection의 현재 연결 정보를 문자열로 반환합니다.
  */
 VALUE
 cubrid_conn_to_s(VALUE self)
@@ -328,8 +418,6 @@ cubrid_conn_to_s(VALUE self)
 
 /* call-seq:
  *   server_version() -> string
- *
- * 연결된 서버의 버전을 문자열로 반환합니다.
  */
 VALUE
 cubrid_conn_server_version(VALUE self)

@@ -34,6 +34,7 @@
 
 #include "ruby.h"
 #include "cas_cci.h"
+#include "stdlib.h"
 
 #define MAX_STR_LEN     255
 
@@ -47,6 +48,30 @@
 #define CUBRID_ER_OPEN_FILE                     -2009
 #define CUBRID_ER_CREATE_TEMP_FILE              -2010
 #define CUBRID_ER_TRANSFER_FAIL                 -2011
+#define CUBRID_ER_ALLOC_FAILED                  -2012
+
+
+/* Maximum length for the Cubrid data types. 
+ *
+ * The max len of LOB is the max file size creatable in an external storage, 
+ * so we ca't give the max len of LOB type, just use 1G. Please ignore it. 
+ */
+#define MAX_CUBRID_CHAR_LEN   1073741823
+#define MAX_LEN_INTEGER	      (10 + 1)
+#define MAX_LEN_SMALLINT      (5 + 1)
+#define MAX_LEN_BIGINT	      (19 + 1)
+#define MAX_LEN_FLOAT	      (14 + 1)
+#define MAX_LEN_DOUBLE	      (28 + 1)
+#define MAX_LEN_MONETARY      (28 + 2)
+#define MAX_LEN_DATE	      10
+#define MAX_LEN_TIME	      8
+#define MAX_LEN_TIMESTAMP     23
+#define MAX_LEN_DATETIME      MAX_LEN_TIMESTAMP
+#define MAX_LEN_OBJECT	      MAX_CUBRID_CHAR_LEN
+#define MAX_LEN_SET	      MAX_CUBRID_CHAR_LEN
+#define MAX_LEN_MULTISET      MAX_CUBRID_CHAR_LEN
+#define MAX_LEN_SEQUENCE      MAX_CUBRID_CHAR_LEN
+#define MAX_LEN_LOB           MAX_CUBRID_CHAR_LEN
 
 typedef struct {
   int    handle;
@@ -66,6 +91,8 @@ typedef struct {
   T_CCI_SQLX_CMD   sql_type;
   T_CCI_COL_INFO   *col_info;
   int              bound;
+  T_CCI_BLOB       blob;
+  T_CCI_BLOB       clob;
 } Statement;
 
 typedef struct {
@@ -76,6 +103,30 @@ typedef struct {
   VALUE            hash;
 } Oid;
 
+#ifdef MS_WINDOWS
+#define CUBRID_LONG_LONG _int64
+#else
+#define CUBRID_LONG_LONG long long
+#endif
+
+//ifndef CCI_ER_END
+//#define CCI_ER_END (-20100)
+//#endif
+
+
+#ifndef RSTRING_PTR
+#define RSTRING_PTR(str) RSTRING(str)->ptr
+#endif
+
+#ifndef RSTRING_LEN
+#define RSTRING_LEN(str) RSTRING(str)->len
+#endif
+
+#ifndef HAVE_RB_STR_SET_LEN
+#define rb_str_set_len(str, length) (RSTRING_LEN(str) = (length))
+#endif
+
+VALUE GeteCubrid();
 extern void cubrid_handle_error(int e, T_CCI_ERROR *error);
 
 #define GET_CONN_STRUCT(self, con) Data_Get_Struct((self), Connection, (con))
@@ -95,4 +146,51 @@ extern void cubrid_handle_error(int e, T_CCI_ERROR *error);
       return (rtn); \
     } \
   } while(0)
+  
+typedef struct
+{
+    char *type_name;
+    T_CCI_U_TYPE cubrid_u_type;
+    int len;
+} DB_TYPE_INFO;
+
+/* Define Cubrid supported date types */
+static const DB_TYPE_INFO db_type_info[] = {
+    {"NULL", CCI_U_TYPE_NULL, 0},
+    {"UNKNOWN", CCI_U_TYPE_UNKNOWN, MAX_LEN_OBJECT},
+
+    {"CHAR", CCI_U_TYPE_CHAR, -1},
+    {"STRING", CCI_U_TYPE_STRING, -1},
+    {"NCHAR", CCI_U_TYPE_NCHAR, -1},
+    {"VARNCHAR", CCI_U_TYPE_VARNCHAR, -1},
+
+    {"BIT", CCI_U_TYPE_BIT, -1},
+    {"VARBIT", CCI_U_TYPE_VARBIT, -1},
+
+    {"NUMERIC", CCI_U_TYPE_NUMERIC, -1},
+    {"NUMBER", CCI_U_TYPE_NUMERIC, -1},
+    {"INT", CCI_U_TYPE_INT, MAX_LEN_INTEGER},
+    {"SHORT", CCI_U_TYPE_SHORT, MAX_LEN_SMALLINT},
+    {"BIGINT", CCI_U_TYPE_BIGINT, MAX_LEN_BIGINT},
+    {"MONETARY", CCI_U_TYPE_MONETARY, MAX_LEN_MONETARY},
+
+    {"FLOAT", CCI_U_TYPE_FLOAT, MAX_LEN_FLOAT},
+    {"DOUBLE", CCI_U_TYPE_DOUBLE, MAX_LEN_DOUBLE},
+
+    {"DATE", CCI_U_TYPE_DATE, MAX_LEN_DATE},
+    {"TIME", CCI_U_TYPE_TIME, MAX_LEN_TIME},
+    {"DATETIME", CCI_U_TYPE_DATETIME, MAX_LEN_DATETIME},
+    {"TIMESTAMP", CCI_U_TYPE_TIMESTAMP, MAX_LEN_TIMESTAMP},
+
+    {"SET", CCI_U_TYPE_SET, MAX_LEN_SET},
+    {"MULTISET", CCI_U_TYPE_MULTISET, MAX_LEN_MULTISET},
+    {"SEQUENCE", CCI_U_TYPE_SEQUENCE, MAX_LEN_SEQUENCE},
+    {"RESULTSET", CCI_U_TYPE_RESULTSET, -1},
+
+    {"OBJECT", CCI_U_TYPE_OBJECT, MAX_LEN_OBJECT},
+    {"BLOB", CCI_U_TYPE_BLOB, MAX_LEN_LOB},
+    {"CLOB", CCI_U_TYPE_CLOB, MAX_LEN_LOB},
+    {"ENUM",CCI_U_TYPE_ENUM,-1}
+};
+
 
