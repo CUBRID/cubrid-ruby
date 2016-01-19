@@ -93,10 +93,11 @@ static struct _error_message {
 static char * 
 get_error_msg(int err_code)
 {
-  int i;
+  int i = 0;
+  int len = (sizeof(cubrid_err_msgs) / sizeof(cubrid_err_msgs[0]));
 
-  for(i = 0; ; i++) {
-    if (!cubrid_err_msgs[i].err || cubrid_err_msgs[i].err == err_code) {
+  for(i = 0;i<len; i++) {
+    if (cubrid_err_msgs[i].err == err_code) {
       return cubrid_err_msgs[i].msg;
     }
   }
@@ -107,7 +108,8 @@ void
 cubrid_handle_error(int e, T_CCI_ERROR *error)
 {
   int       err_code;
-  char      msg[1024];
+  char      msg[1024]={0};
+  char      buf[128] ={0};
   char      *err_msg = NULL, *facility_msg;
 
   if (e == CCI_ER_DBMS) {
@@ -123,22 +125,27 @@ cubrid_handle_error(int e, T_CCI_ERROR *error)
     err_msg = get_error_msg(e);
     err_code = e;
 
-    if (e > -1000) {
-      facility_msg = "CCI";
-    } else if (e > -2000) {
-      facility_msg = "CAS";
-    } else if (e > -3000) {
-      facility_msg = "CLIENT";
-    } else {
-      facility_msg = "UNKNOWN";
-    }
+    if (e > CAS_ER_IS){
+	  facility_msg = "CAS";
+	}
+      else if (e > -20100){
+	  facility_msg = "CCI";
+	}
+      else{
+	  facility_msg = "CLIENT";
+	}
+
   }
 
   if (!err_msg) {
-    err_msg = "Unknown Error";
+    err_code = cci_get_err_msg(e,buf,128);
+    if(err_code<0)
+      err_msg = "Unknown Error";
+    else
+      err_msg = buf;
   }
 
   sprintf(msg, "ERROR: %s, %d, %s", facility_msg, err_code, err_msg);
-  rb_raise(rb_eStandardError, msg);
+  rb_raise(GeteCubrid(), msg);
 }
 

@@ -3,7 +3,7 @@ require 'cubrid'
 
 class CUBRID_Test < Test::Unit::TestCase
     def setup
-        @con = Cubrid.connect('demodb')
+        @con = Cubrid.connect('demodb','test-db-server',33000,'dba','')
     end
 
     def test_connect
