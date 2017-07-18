@@ -1,7 +1,7 @@
 spec = Gem::Specification.new do |s|
   s.name = "cubrid"
   s.description = "This extension is a Ruby connector for CUBRID Database."
-  s.version = "0.64"
+  s.version = "10.1.0"
   s.authors = "NHN"
   s.email = "cubrid_ruby@nhncorp.com"
   s.homepage ="http://www.cubrid.org/cubrid_ruby_programming"
@@ -9,7 +9,7 @@ spec = Gem::Specification.new do |s|
   s.rubyforge_project = "cubrid"
   s.platform = Gem::Platform::RUBY
   s.required_ruby_version = Gem::Version::Requirement.new("~> 1.8.0")
-  s.files = ["README.rdoc", "ext/extconf.rb", "ext/cubrid.c", "ext/cubrid.h", "ext/conn.c", "ext/stmt.c", "ext/oid.c", "ext/error.c"]
+  s.files = ["README.rdoc", "ext/extconf.rb", "ext/cubrid.c", "ext/cubrid.h", "ext/conn.c", "ext/stmt.c", "ext/error.c"]
   s.require_path = "."
   s.extensions = ["ext/extconf.rb"]
   s.has_rdoc = true
