@@ -99,7 +99,7 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
   void *val = NULL;
   int *ind;
 
-  arr_size = RARRAY(data)->len;
+  arr_size = RARRAY_LEN (data);
   ind = ALLOCA_N(int, arr_size);
   if (ind == NULL) {
     rb_raise(rb_eNoMemError, "Not enough memory");
@@ -174,8 +174,8 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
               ind[i] = 1;
             }
             else {
-              bit_ary[i].size = RSTRING(rb_ary_entry(data, i))->len;
-              bit_ary[i].buf = RSTRING(rb_ary_entry(data, i))->ptr;
+              bit_ary[i].size = RSTRING_LEN (rb_ary_entry(data, i));
+              bit_ary[i].buf = RSTRING_PTR (rb_ary_entry(data, i));
               ind[i] = 0;
             }
           }
@@ -195,7 +195,7 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
               ind[i] = 1;
             }
             else {
-              str_ary[i] = RSTRING(rb_ary_entry(data, i))->ptr;
+              str_ary[i] = RSTRING_PTR (rb_ary_entry(data, i));
               ind[i] = 0;
             }
           }
@@ -224,12 +224,12 @@ cubrid_stmt_make_set(VALUE data, int u_type) /* TODO: check if all item has same
           }
           else {
             a = rb_funcall(rb_ary_entry(data, i), rb_intern("to_a"), 0);
-            date_ary[i].ss = FIX2INT(RARRAY(a)->ptr[0]);
-            date_ary[i].mm = FIX2INT(RARRAY(a)->ptr[1]);
-            date_ary[i].hh = FIX2INT(RARRAY(a)->ptr[2]);
-            date_ary[i].day = FIX2INT(RARRAY(a)->ptr[3]);
-            date_ary[i].mon = FIX2INT(RARRAY(a)->ptr[4]);
-            date_ary[i].yr = FIX2INT(RARRAY(a)->ptr[5]);
+            date_ary[i].ss = FIX2INT(RARRAY_AREF (a, 0));
+            date_ary[i].mm = FIX2INT(RARRAY_AREF (a, 1));
+            date_ary[i].hh = FIX2INT(RARRAY_AREF (a, 2));
+            date_ary[i].day = FIX2INT(RARRAY_AREF (a, 3));
+            date_ary[i].mon = FIX2INT(RARRAY_AREF (a, 4));
+            date_ary[i].yr = FIX2INT(RARRAY_AREF (a, 5));
             
             ind[i] = 0;
           }
@@ -318,13 +318,13 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
       break;
 
     case T_STRING:
-      str_val = RSTRING(data)->ptr;
+      str_val = RSTRING_PTR (data);
       a_type = CCI_A_TYPE_STR;
       val = str_val;
       if (u_type == CCI_U_TYPE_UNKNOWN) {
         u_type = CCI_U_TYPE_STRING;
       } else if (u_type == CCI_U_TYPE_BIT || u_type == CCI_U_TYPE_VARBIT) {
-        bit.size = RSTRING(data)->len;
+        bit.size = RSTRING_LEN(data);
         bit.buf = str_val;
         a_type = CCI_A_TYPE_BIT;
         val = &bit;
@@ -336,12 +336,12 @@ cubrid_stmt_bind_internal(Statement *stmt, int index, VALUE data, int u_type, in
         VALUE a;
 
         a = rb_funcall(data, rb_intern("to_a"), 0);
-        date.ss = FIX2INT(RARRAY(a)->ptr[0]);
-        date.mm = FIX2INT(RARRAY(a)->ptr[1]);
-        date.hh = FIX2INT(RARRAY(a)->ptr[2]);
-        date.day = FIX2INT(RARRAY(a)->ptr[3]);
-        date.mon = FIX2INT(RARRAY(a)->ptr[4]);
-        date.yr = FIX2INT(RARRAY(a)->ptr[5]);
+        date.ss = FIX2INT(RARRAY_AREF (a, 0));
+        date.mm = FIX2INT(RARRAY_AREF (a, 1));
+        date.hh = FIX2INT(RARRAY_AREF (a, 2));
+        date.day = FIX2INT(RARRAY_AREF (a, 3));
+        date.mon = FIX2INT(RARRAY_AREF (a, 4));
+        date.yr = FIX2INT(RARRAY_AREF (a, 5));
 
         a_type = CCI_A_TYPE_DATE;
         val = &date;
@@ -890,7 +890,7 @@ cubrid_stmt_fetch_hash(VALUE self)
 
   hash = rb_hash_new();
   for(i = 0; i < stmt->col_count; i++) {
-    col = RARRAY(row)->ptr[i];
+    col = RARRAY_AREF(row, i);
     strcpy(colName, CCI_GET_RESULT_INFO_NAME(stmt->col_info, i+1));
     rb_hash_aset(hash, rb_str_new2(colName), col);
   }
