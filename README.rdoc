@@ -8,22 +8,20 @@ This is a Ruby Driver and ActiveRecord Adapter for CUBRID Database.
 
  1. cd ext/
  2. ruby extconf.rb
- 3. make install				# make sure Ruby Development Kit (http://rubyinstaller.org) is installed.
+ 3. make install
  
 === Gem Installation
 
  Windows:
- - gem install cubrid
+ > gem install cubrid
  
  Linux:
- - sudo -E gem install cubrid
+ $ sudo -E gem install cubrid
 
-== Features/Problems
+== Features/Dependencies
 
-* Cross-platform.
-
+* Cross-platform
 * Compatible with CUBRID 10.2.0.
-
 * Compatible with Ruby 1.9 or higher
 
 == Synopsis
