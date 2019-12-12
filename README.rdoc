@@ -2,7 +2,11 @@
 
 == Description
 
-This is a Ruby Driver and ActiveRecord Adapter for CUBRID Database.
+This is a Ruby Driver and ActiveRecord Adapter for CUBRID Database. 
+The latest version of CUBRID Ruby driver can be found at:
+
+http://ftp.cubrid.org/CUBRID_Drivers/Ruby_Driver/
+
 
 == Installation
 
