@@ -1,7 +1,7 @@
 spec = Gem::Specification.new do |s|
   s.name = "cubrid"
   s.description = "This extension is a Ruby connector for CUBRID Database."
-  s.version = "10.2.0"
+  s.version = "11.0.0"
   s.authors = "NHN"
   s.email = "cubrid_ruby@nhncorp.com"
   s.homepage ="http://www.cubrid.org/cubrid_ruby_programming"
