@@ -25,7 +25,7 @@ http://ftp.cubrid.org/CUBRID_Drivers/Ruby_Driver/
 == Features/Dependencies
 
 * Cross-platform
-* Compatible with CUBRID 10.2.0.
+* Compatible with CUBRID 11.0
 * Compatible with Ruby 1.9 or higher
 
 == Synopsis
