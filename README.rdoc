@@ -51,9 +51,3 @@ Use Case:
  else
   puts "Connection could not be established"
  end
-
-== Copyright
-
-Author    :: NHN Corp. <cubrid_ruby@nhncorp.com>
-Copyright :: Copyright (c) 2010 Search Solution Corporation
-License   :: Ruby's
