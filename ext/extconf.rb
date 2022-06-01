@@ -32,8 +32,8 @@ require 'mkmf'
 require 'rbconfig'
 
 if ENV["CUBRID"]
-	cci_lib_path = ENV["CUBRID"] + "/lib"
-	cci_inc_path = ENV["CUBRID"] + "/include"
+	cci_lib_path = ENV["CUBRID"] + "/cci/lib"
+	cci_inc_path = ENV["CUBRID"] + "/cci/include"
 	
 	$INCFLAGS = ($INCFLAGS ? $INCFLAGS : "") + " -I" +  cci_inc_path
 	
